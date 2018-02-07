@@ -51,18 +51,16 @@ class Board(val size: Int, val initMapState: Option[MapState] = None, val initAt
       case Left(true) => BoardOutcome(this, Outcomes.AlreadyTaken)
 
       case Left(false) => {
-        val mapStateEntry = Map(coords -> Left(true))
-        val mergedMap = mapState ++ mapStateEntry
-        val newBoard = Board(size, mergedMap, attackableShips)
+        val newMapState = updateMapStateWithCoordsAsAttacked(coords)
+        val newBoard = Board(size, newMapState, attackableShips)
         BoardOutcome(newBoard, Outcomes.Miss)
       }
 
       case Right(shipAbbrv) => (attackableShips(shipAbbrv).attackable.get - coords).size  match {
         case 0 => {
-          val mapStateEntry = Map(coords -> Left(true))
-          val mergedMap = mapState ++ mapStateEntry
+          val newMapState = updateMapStateWithCoordsAsAttacked(coords)
           val newAttackableShips = attackableShips - shipAbbrv
-          val newBoard = Board(size, mergedMap, newAttackableShips)
+          val newBoard = Board(size, newMapState, newAttackableShips)
           newAttackableShips.size match {
             case 0 => BoardOutcome(newBoard, Outcomes.Win)
             case _ => BoardOutcome(newBoard, Outcomes.Sunk)
@@ -72,14 +70,18 @@ class Board(val size: Int, val initMapState: Option[MapState] = None, val initAt
           val ship = attackableShips(shipAbbrv)
           val newAttackable = attackableShips(shipAbbrv).attackable.get - coords
           val newShip = ship.copy(attackable = Some(newAttackable))
-          val mapStateEntry = Map(coords -> Left(true))
-          val mergedMap = mapState ++ mapStateEntry
+          val newMapState = updateMapStateWithCoordsAsAttacked(coords)
           val newAttackableShips = attackableShips ++ Map(shipAbbrv -> newShip)
-          val newBoard = Board(size, mergedMap, newAttackableShips)
+          val newBoard = Board(size, newMapState, newAttackableShips)
           BoardOutcome(newBoard, Outcomes.Hit)
         }
       }
     }
+  }
+
+  def updateMapStateWithCoordsAsAttacked(coords: Coordinates): MapState = {
+    val mapStateEntry = Map(coords -> Left(true))
+    mapState ++ mapStateEntry
   }
 }
 
